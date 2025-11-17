@@ -1,0 +1,19 @@
+fastapi
+uvicorn[standard]
+pydantic
+python-multipart
+streamlit
+httpx
+python-dotenv
+requests
+loguru
+aiofiles
+tqdm
+pytest
+# vector DB options you may add:
+chromadb
+sentence-transformers
+openai
+psycopg2-binary
+sqlalchemy[asyncio]
+aiohttp
