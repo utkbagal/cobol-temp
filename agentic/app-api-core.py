@@ -1,5 +1,6 @@
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, UploadFile, File, Form
 from app.utils.correlation import new_correlation_id
+from app.db.vector_adapter import VectorAdapter
 
 router = APIRouter()
 
@@ -15,3 +16,8 @@ async def ingest(file: UploadFile = File(...)):
         "size_bytes": text_len,
         "message": "Ingestion stub - Stage 1"
     }
+@router.post("/retrieve")
+async def retrieve(query: str = Form(...)):
+    adapter = VectorAdapter()
+    results = await adapter.query(query_text=query)
+    return results
