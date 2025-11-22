@@ -1,0 +1,10 @@
+OPENAI_API_KEY=
+VECTOR_DB=chroma
+VECTOR_DB_PATH=./data/vector_db
+DATABASE_URL=sqlite+aiosqlite:///./data/macis.db
+
+FASTAPI_PORT=8000
+STREAMLIT_PORT=8501
+
+SECRET_KEY=some_dev_secret
+LOG_LEVEL=INFO
