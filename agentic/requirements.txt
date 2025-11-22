@@ -8,3 +8,9 @@ python-dotenv
 requests
 aiofiles
 tqdm
+chromadb
+pdfplumber
+python-docx
+sentence-transformers
+openai
+nltk
