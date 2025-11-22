@@ -1,0 +1,28 @@
+macis/
+├─ app/
+│  ├─ api/
+│  │  ├─ __init__.py
+│  │  ├─ core.py
+│  │  ├─ tools.py
+│  ├─ agents/
+│  │  ├─ __init__.py
+│  │  ├─ controller.py
+│  │  ├─ intake.py
+│  ├─ rag/
+│  │  ├─ __init__.py
+│  │  ├─ ingestion.py
+│  ├─ db/
+│  │  ├─ __init__.py
+│  │  ├─ vector_adapter.py
+│  ├─ utils/
+│  │  ├─ logging_middleware.py
+│  │  ├─ correlation.py
+│  ├─ config.py
+│  ├─ main.py
+│
+├─ frontend/
+│  ├─ ui.py
+│
+├─ .env.example
+├─ requirements.txt
+├─ README.md
