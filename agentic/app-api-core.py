@@ -1,6 +1,8 @@
 from fastapi import APIRouter, UploadFile, File, Form
 from app.utils.correlation import new_correlation_id
 from app.db.vector_adapter import VectorAdapter
+from app.agents.controller import Orchestrator
+
 import openai
 
 
@@ -51,3 +53,14 @@ Question:
         "answer": response.choices[0].message["content"],
         "evidence": hits
     }
+
+@router.post("/claims/process")
+async def process_claim(filename: str = Form(...)):
+    cid = new_correlation_id()
+    
+    orch = Orchestrator(correlation_id=cid)
+    orch.state.context["filename"] = filename  # placeholder for metadata
+
+    result = await orch.run()
+
+    return result.dict()
