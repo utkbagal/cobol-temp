@@ -1,8 +1,7 @@
-from fastapi import APIRouter, UploadFile, File, Form
+from fastapi import APIRouter, UploadFile, File, Form, Body
 from app.utils.correlation import new_correlation_id
 from app.db.vector_adapter import VectorAdapter
 from app.agents.controller import Orchestrator
-
 import openai
 
 
@@ -63,4 +62,16 @@ async def process_claim(filename: str = Form(...)):
 
     result = await orch.run()
 
+    return result.dict()
+
+@router.post("/claims/rerun_triage")
+async def rerun_triage(payload: dict = Body(...)):
+    cid = payload.get("correlation_id")
+    if not cid:
+        return {"error": "correlation_id required"}, 400
+    # Recreate orchestrator but only run risk triage agent
+    orch = Orchestrator(correlation_id=cid)
+    # optionally preload state from DB (we're in-memory for now)
+    # For now: run whole pipeline again but in real impl we'd persist and resume
+    result = await orch.run()
     return result.dict()
