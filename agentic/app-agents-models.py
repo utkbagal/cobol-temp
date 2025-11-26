@@ -8,4 +8,7 @@ class AgentMessage(BaseModel):
 class OrchestratorState(BaseModel):
     correlation_id: str
     steps: List[AgentMessage] = []
-    context: Dict[str, Any] = {}   # Shared data between agents
+    context: Dict[str, Any] = {}
+
+    class Config:
+        arbitrary_types_allowed = True
