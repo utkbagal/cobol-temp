@@ -1,14 +1,33 @@
-2025-11-28 00:27:47.796 | INFO     | app.utils.logging_middleware:dispatch:8 - >>> Request: POST http://localhost:8001/api/ingest
-2025-11-28 00:27:47.798 | INFO     | app.utils.logging_middleware:dispatch:10 - <<< Response: 200 http://localhost:8001/api/ingest
-INFO:     127.0.0.1:63867 - "POST /api/ingest HTTP/1.1" 200 OK
-2025-11-28 00:27:49.835 | INFO     | app.utils.logging_middleware:dispatch:8 - >>> Request: POST http://localhost:8001/api/claims/process
-2025-11-28 00:27:49.836 | INFO     | app.utils.observability:track_event:12 - {"event": "orchestrator_start", "cid": "f23f815a-a840-46d4-9b72-eda2692ce650", "payload": {}}
-2025-11-28 00:27:50.479 | INFO     | app.utils.logging_middleware:dispatch:8 - >>> Request: GET http://localhost:8001/tools/policy/POL123
-2025-11-28 00:27:50.480 | INFO     | app.utils.logging_middleware:dispatch:10 - <<< Response: 200 http://localhost:8001/tools/policy/POL123 
-INFO:     127.0.0.1:53062 - "GET /tools/policy/POL123 HTTP/1.1" 200 OK
-2025-11-28 00:27:50.481 | INFO     | app.utils.observability:track_event:12 - {"event": "IntakeAgent_latency_ms", "cid": "f23f815a-a840-46d4-9b72-eda2692ce650", "payload": {"ms": 645}}
-INFO:     127.0.0.1:53060 - "POST /api/claims/process HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:50203 - "POST /api/claims/process HTTP/1.1" 500 Internal Server Error
 ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\tenacity\__init__.py", line 480, in __call__
+    result = fn(*args, **kwargs)
+  File "C:\Users\2000110656\capstone_project\macis\app\utils\llm_client.py", line 16, in chat_with_backoff
+    resp = openai.chat.completions.create(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\openai\_utils\_proxy.py", line 20, in __getattr__
+    proxied = self.__get_proxied__()
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\openai\_utils\_proxy.py", line 58, in __get_proxied__
+    return self.__load__()
+           ~~~~~~~~~~~~~^^
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\openai\_module_client.py", line 37, in __load__
+    return _load_client().chat
+           ~~~~~~~~~~~~^^
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\openai\__init__.py", line 351, in _load_client
+    _client = _ModuleClient(
+        api_key=api_key,
+    ...<8 lines>...
+        http_client=http_client,
+    )
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\openai\_client.py", line 137, in __init__
+    raise OpenAIError(
+        "The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable"
+    )
+openai.OpenAIError: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable
+
+The above exception was the direct cause of the following exception:
+
 Traceback (most recent call last):
   File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 409, in run_asgi
     result = await app(  # type: ignore[func-returns-value]
@@ -81,7 +100,17 @@ Traceback (most recent call last):
   File "C:\Users\2000110656\capstone_project\macis\app\api\core.py", line 65, in process_claim
     result = await orch.run()
              ^^^^^^^^^^^^^^^^
-  File "C:\Users\2000110656\capstone_project\macis\app\agents\controller.py", line 20, in run
-    track_event("agent_step", cid, {"agent": agent.name, "step_output": self.state.steps[-1].output})
-                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'dict' object has no attribute 'output'
+  File "C:\Users\2000110656\capstone_project\macis\app\agents\controller.py", line 19, in run
+    self.state = await agent.run(self.state)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\2000110656\capstone_project\macis\app\agents\summarization.py", line 28, in run
+    resp = chat_with_backoff(messages, cid)
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\tenacity\__init__.py", line 338, in wrapped_f
+    return copy(f, *args, **kw)
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\tenacity\__init__.py", line 477, in __call__
+    do = self.iter(retry_state=retry_state)
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\tenacity\__init__.py", line 378, in iter
+    result = action(retry_state)
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\tenacity\__init__.py", line 421, in exc_check
+    raise retry_exc from fut.exception()
+tenacity.RetryError: RetryError[<Future at 0x19c681ab890 state=finished raised OpenAIError>]
