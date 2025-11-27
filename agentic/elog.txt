@@ -1,4 +1,5 @@
-  File "C:\Users\2000110656\capstone_project\macis\app\agents\summarization.py", line 30, in run
-    summary = resp.choices[0].message["content"].strip()
-              ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
-TypeError: 'ChatCompletionMessage' object is not subscriptable
+AttributeError: module 'streamlit' has no attribute 'experimental_rerun'
+Traceback:
+File "C:\Users\2000110656\capstone_project\macis\frontend\ui.py", line 32, in <module>
+    st.experimental_rerun()
+    ^^^^^^^^^^^^^^^^^^^^^
