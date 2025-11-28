@@ -1,15 +1,22 @@
-import openai
-from dotenv import load_dotenv
+# app/rag/embeddings.py
 import os
 
-load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+OPENAI_KEY = os.getenv("OPENAI_API_KEY")
 
-EMBED_MODEL = "text-embedding-3-small"
+if OPENAI_KEY:
+    import openai
+    openai.api_key = OPENAI_KEY
+    EMBED_MODEL = "text-embedding-3-small"
 
-async def embed_text(text: str) -> list[float]:
-    response = openai.embeddings.create(
-        input=text,
-        model=EMBED_MODEL
-    )
-    return response.data[0].embedding
+    async def embed_text(text: str) -> list[float]:
+        # sync call inside async – acceptable for dev; replace with threadpool for production
+        resp = openai.embeddings.create(input=text, model=EMBED_MODEL)
+        return resp.data[0].embedding
+else:
+    # fallback local model
+    from sentence_transformers import SentenceTransformer
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+
+    async def embed_text(text: str) -> list[float]:
+        vec = model.encode(text)
+        return vec.tolist()
