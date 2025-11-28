@@ -3,7 +3,12 @@ from app.utils.correlation import new_correlation_id
 from app.db.vector_adapter import VectorAdapter
 from app.agents.controller import Orchestrator
 import openai
-
+from app.rag.extractors import extract_text
+from app.rag.cleaners import mask_pii
+from app.rag.chunker import chunk_text
+from app.db.vector_adapter import VectorAdapter
+from app.rag.embeddings import embed_text
+from typing import Dict, Any
 
 router = APIRouter()
 
@@ -20,38 +25,26 @@ async def ingest(file: UploadFile = File(...)):
         "message": "Ingestion stub - Stage 1"
     }
 @router.post("/retrieve")
-async def retrieve(query: str = Form(...)):
-    adapter = VectorAdapter()
-    results = await adapter.query(query_text=query)
-    return results
+async def retrieve(query: str = Body(...)):
+    results = await retrieve_by_query(query, top_k=5)
+    return {"hits": results}
 
 @router.post("/rag-answer")
-async def rag_answer(query: str = Form(...)):
-    adapter = VectorAdapter()
-    hits = await adapter.query(query, top_k=3)
+async def rag_answer(payload: dict = Body(...)):
+    query = payload.get("query")
+    source = payload.get("source")  # optional: filename to restrict
+    hits = await retrieve_by_query(query, top_k=5, source=source) if source else await retrieve_by_query(query, top_k=5)
 
-    context = "\n\n".join([h["text"] for h in hits])
+    # build context string with source captions
+    context = "\n\n".join([f"[source: {h['metadata'].get('source','unknown')}]\n{h['text']}" for h in hits])
 
-    prompt = f"""
-Use the context below to answer the question. 
-If the answer is not in the context, reply with "Not found in documents."
+    prompt = RAG_ANSWER_PROMPT.format(context=context, query=query)
 
-Context:
-{context}
+    resp = chat_with_backoff([{"role": "user", "content": prompt}], payload.get("correlation_id", "none"))
+    # new SDK: resp.choices[0].message.content
+    answer = resp.choices[0].message.content.strip()
 
-Question:
-{query}
-"""
-
-    response = openai.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}]
-    )
-
-    return {
-        "answer": response.choices[0].message["content"],
-        "evidence": hits
-    }
+    return {"answer": answer, "evidence": hits}
 
 @router.post("/claims/process")
 async def process_claim(filename: str = Form(...)):
