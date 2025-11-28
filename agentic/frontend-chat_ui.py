@@ -73,8 +73,27 @@ if user_input:
 
     else:
         # Treat as doc QA via RAG
-        payload = {"query": user_input, "correlation_id": st.session_state.correlation_id, "source": st.session_state.uploaded_file.name}
-        r = requests.post(f"{API_BASE}/api/rag-answer", json=payload)
+        payload = {
+    "query": user_input,
+    "filename": st.session_state.uploaded_file.name,
+    "correlation_id": st.session_state.correlation_id
+}
+r = requests.post(f"{API_BASE}/api/claims/qna", json=payload)
+result = r.json()
+answer = result["context"]["qna_result"]["answer"]
+
+st.session_state.messages.append({
+    "role": "assistant",
+    "content": answer
+})
+
+# also show agent trace
+for step in result["steps"]:
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": f"**{step['agent']}**:\n```json\n{json.dumps(step['output'], indent=2)}\n```"
+    })
+
         if r.status_code == 200:
             ans = r.json().get("answer", "")
             evidence = r.json().get("evidence", [])
