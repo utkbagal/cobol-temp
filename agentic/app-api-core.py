@@ -68,3 +68,17 @@ async def rerun_triage(payload: dict = Body(...)):
     # For now: run whole pipeline again but in real impl we'd persist and resume
     result = await orch.run()
     return result.dict()
+
+@router.post("/claims/qna")
+async def qna(payload: dict = Body(...)):
+    filename = payload.get("filename")
+    query = payload.get("query")
+    cid = payload.get("correlation_id") or new_correlation_id()
+
+    orch = Orchestrator(correlation_id=cid)
+    orch.state.context["filename"] = filename
+    orch.state.context["user_query"] = query
+
+    result = await orch.run(mode="qna")
+
+    return result.dict()
