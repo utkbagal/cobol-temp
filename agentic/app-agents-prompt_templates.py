@@ -68,6 +68,39 @@ Provide a short, direct answer and cite source names in square brackets.
 """
 
 QA_AGENT_PROMPT = """
+You are a Q&A agent. 
+Answer ONLY using the context. 
+If the answer is not in the context, reply EXACTLY:
+"Not found in documents."
+
+Context:
+{context}
+
+Question:
+{query}
+"""
+
+QA_TOOL_FUSION_PROMPT = """
+You are a QnA fusion agent.
+
+The user asked the following question:
+{query}
+
+The document did not contain the answer, so a tool was invoked:
+Tool Name: {tool_name}
+
+Tool Output (JSON):
+{tool_data}
+
+Using ONLY the tool output above:
+- Answer the question directly.
+- Be concise.
+- Mention that the tool was used.
+
+Final Answer:
+"""
+
+QA_AGENT_PROMPT = """
 You are a QnA agent. Answer the question ONLY using the context below.
 
 Context:
