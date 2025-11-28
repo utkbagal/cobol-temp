@@ -10,9 +10,9 @@ from app.db.vector_adapter import VectorAdapter
 from app.rag.embeddings import embed_text
 from typing import Dict, Any
 from app.utils.intent import detect_intent
-from app.utils.guardrails import sanitize_user_input
 from app.utils.rate_limiter import allowed as allowed_rate
 from app.utils.observability import track_event
+from app.utils.guardrails import sanitize_user_input
 
 router = APIRouter()
 
@@ -57,6 +57,20 @@ async def process_claim(filename: str = Form(...)):
     orch = Orchestrator(correlation_id=cid)
     orch.state.context["filename"] = filename  # placeholder for metadata
 
+    if not allowed_rate(cid):
+        return {"error":"rate_limited"}, 429
+
+    sg = sanitize_user_input(query)
+    if not sg["ok"]:
+        return {"error": sg.get("reason"), "flags": sg.get("flags")}, 400
+    sanitized_query = sg["sanitized"]
+
+    # 3. Intent check (just to confirm user expects a qna)
+    intent = await detect_intent(sanitized_query, cid)
+    if intent["intent"] not in ("qna","unknown","view_policy","claim_status"):
+        # disallow intents that don't match the endpoint
+        return {"error": "intent_mismatch", "detected": intent}, 400
+
     result = await orch.run()
 
     return result.dict()
@@ -83,6 +97,20 @@ async def qna(payload: dict = Body(...)):
     orch.state.context["filename"] = filename
     orch.state.context["user_query"] = query
 
+    if not allowed_rate(cid):
+        return {"error":"rate_limited"}, 429
+
+    sg = sanitize_user_input(query)
+    if not sg["ok"]:
+        return {"error": sg.get("reason"), "flags": sg.get("flags")}, 400
+    sanitized_query = sg["sanitized"]
+
+    # 3. Intent check (just to confirm user expects a qna)
+    intent = await detect_intent(sanitized_query, cid)
+    if intent["intent"] not in ("qna","unknown","view_policy","claim_status"):
+        # disallow intents that don't match the endpoint
+        return {"error": "intent_mismatch", "detected": intent}, 400
+    
     result = await orch.run(mode="qna")
 
     return result.dict()
