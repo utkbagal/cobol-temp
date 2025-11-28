@@ -4,7 +4,7 @@ import requests
 import json
 import os
 
-API_BASE = os.getenv("API_BASE", "http://localhost:8001")
+API_BASE = os.getenv("API_BASE", "http://localhost:8002")
 
 st.set_page_config(page_title="MACIS Chat", layout="wide")
 
@@ -46,20 +46,22 @@ with st.sidebar:
 
         if r.status_code == 200:
             data = r.json()
-            st.session_state.correlation_id = data["correlation_id"]
+            correlation_id = data["correlation_id"]
+            correlation_id = correlation_id["correlation_id"]
+            st.session_state.correlation_id = correlation_id
 
             st.session_state.messages.append({
                 "role": "assistant",
                 "content": (
                     f"📄 **Document uploaded:** {uploaded.name}\n"
-                    f"🧵 **Correlation ID:** {data['correlation_id']}\n\n"
+                    f"🧵 **Correlation ID:** {correlation_id}\n\n"
                     "What would you like to do next?\n"
                     "- File a claim\n"
                     "- Ask a question about the document\n"
                     "- View extracted information"
                 )
             })
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error("❌ Document ingestion failed!\n" + r.text)
 
@@ -89,11 +91,13 @@ if user_input:
 
     # Ensure document is uploaded before processing claim or QnA
     if not st.session_state.uploaded_file:
+        st.warning("Please upload a document before asking questions or filing a claim.")
         st.session_state.messages.append({
             "role": "assistant",
             "content": "❗ Please upload a document before asking questions or filing a claim."
         })
-        st.experimental_rerun()
+        st.session_state.chat_input = ''
+        st.stop()
 
     # -------------------------------------------------------------------------------------
     # 1️⃣ FILE A CLAIM
@@ -170,9 +174,13 @@ if user_input:
                 })
 
         else:
+            
             st.session_state.messages.append({
                 "role": "assistant",
                 "content": f"❌ QnA Failed:\n{r.text}"
             })
+            st.warning("QnA Failed.")
+            st.session_state.chat_input = ''
+            st.stop()
 
-    st.experimental_rerun()
+    st.rerun()
