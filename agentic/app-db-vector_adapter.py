@@ -1,58 +1,52 @@
 # app/db/vector_adapter.py
+
 import chromadb
-from chromadb.config import Settings
-import uuid
-from typing import List, Dict, Optional
+from typing import List, Dict
+
+PERSIST_DIR = "data/vector_db"
 
 class VectorAdapter:
-    def __init__(self, persist_directory: str = "./data/vector_db"):
-        self.client = chromadb.Client(
-            Settings(chroma_db_impl="duckdb+parquet", persist_directory=persist_directory)
-        )
-        # collection name
+    def __init__(self, persist_directory: str = PERSIST_DIR):
+        # NEW API — Chroma 0.5+
+        self.client = chromadb.PersistentClient(path=persist_directory)
+
+        # create collection if not exists
         self.collection = self.client.get_or_create_collection(
-            name="macis_docs",
-            metadata={"hnsw:space": "cosine"}
+            name="claims",
+            metadata={"hnsw:space": "cosine"}  # similarity metric
         )
 
-    def _new_id(self):
-        return str(uuid.uuid4())
+    async def add_documents(self, docs: List[Dict], embeddings: List[List[float]]):
+        ids = []
+        metadatas = []
+        texts = []
 
-    async def add_documents(self, docs: List[Dict], embeddings: List[List[float]] = None) -> List[str]:
-        """
-        docs: list of {"text": ..., "metadata": {...}}
-        embeddings: list of vectors aligned with docs (optional if Chromadb computes embeddings)
-        """
-        ids = [self._new_id() for _ in docs]
-        texts = [d["text"] for d in docs]
-        metadatas = [d.get("metadata", {}) for d in docs]
+        for i, d in enumerate(docs):
+            ids.append(f"{d['metadata']['cid']}_{d['metadata']['chunk_index']}")
+            metadatas.append(d["metadata"])
+            texts.append(d["text"])
 
-        if embeddings:
-            # Chromadb expects embeddings param as list of lists
-            self.collection.add(ids=ids, documents=texts, metadatas=metadatas, embeddings=embeddings)
-        else:
-            self.collection.add(ids=ids, documents=texts, metadatas=metadatas)
+        self.collection.add(
+            ids=ids,
+            embeddings=embeddings,
+            metadatas=metadatas,
+            documents=texts
+        )
+
         return ids
 
-    async def query(self, query_text: str, top_k: int = 5, metadata_filter: Optional[Dict] = None):
-        """
-        Query by text. Optionally filter by metadata, for example {'source': 'filename.pdf'}
-        """
-        # chroma's query takes query_texts and returns results dict
-        if metadata_filter:
-            results = self.collection.query(
-                query_texts=[query_text],
-                n_results=top_k,
-                where=metadata_filter
-            )
-        else:
-            results = self.collection.query(query_texts=[query_text], n_results=top_k)
+    async def query(self, query_text: str, top_k: int = 5, metadata_filter: dict = None):
+        results = self.collection.query(
+            query_texts=[query_text],
+            n_results=top_k,
+            where=metadata_filter
+        )
 
-        docs = results["documents"][0]
-        distances = results["distances"][0]
-        metadatas = results["metadatas"][0]
-
-        out = []
-        for text, dist, meta in zip(docs, distances, metadatas):
-            out.append({"text": text, "score": float(dist), "metadata": meta})
-        return out
+        hits = []
+        for i in range(len(results["documents"][0])):
+            hits.append({
+                "text": results["documents"][0][i],
+                "score": results["distances"][0][i],
+                "metadata": results["metadatas"][0][i]
+            })
+        return hits
