@@ -82,11 +82,15 @@ r = requests.post(f"{API_BASE}/api/claims/qna", json=payload)
 result = r.json()
 answer = result["context"]["qna_result"]["answer"]
 
+evidence_list = "\n".join([
+    f"- {h['metadata']['source']}, score={h['score']:.4f}"
+    for h in qna["evidence"]
+])
+
 st.session_state.messages.append({
     "role": "assistant",
-    "content": answer
+    "content": f"{answer}\n\n**Evidence Used:**\n{evidence_list}"
 })
-
 # also show agent trace
 for step in result["steps"]:
     st.session_state.messages.append({
