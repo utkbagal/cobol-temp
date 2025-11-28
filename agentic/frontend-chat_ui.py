@@ -74,30 +74,30 @@ if user_input:
     else:
         # Treat as doc QA via RAG
         payload = {
-    "query": user_input,
-    "filename": st.session_state.uploaded_file.name,
-    "correlation_id": st.session_state.correlation_id
-}
-r = requests.post(f"{API_BASE}/api/claims/qna", json=payload)
-qna = r.json()["context"]["qna_result"]
-answer = qna["final_answer"]
+            "query": user_input,
+            "filename": st.session_state.uploaded_file.name if st.session_state.uploaded_file else '',
+            "correlation_id": st.session_state.correlation_id
+        }
+        r = requests.post(f"{API_BASE}/api/claims/qna", json=payload)
+        qna = r.json()["context"]["qna_result"]
+        answer = qna["answer"]
 
-evidence_list = "\n".join([
-    f"- {h['metadata']['source']}, score={h['score']:.4f}"
-    for h in qna["evidence"]
-])
+        evidence_list = "\n".join([
+            f"- {h['metadata']['source']}, score={h['score']:.4f}"
+            for h in qna["evidence"]
+            ])
 
-st.session_state.messages.append({
-    "role": "assistant",
-    "content": f"{answer}\n\n**Evidence Used:**\n{evidence_list}"
-})
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": f"{answer}\n\n**Evidence Used:**\n{evidence_list}"
+            })
 
 # also show agent trace
-for step in result["steps"]:
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": f"**{step['agent']} Output:**\n```json\n{json.dumps(step['output'], indent=2)}\n```"
-    })
+        for step in result["steps"]:
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": f"**{step['agent']} Output:**\n```json\n{json.dumps(step['output'], indent=2)}\n```"
+            })
 
 
         if r.status_code == 200:
