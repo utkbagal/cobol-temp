@@ -39,3 +39,30 @@ Context:
 
 Return in structured JSON format.
 """
+
+# app/agents/prompt_templates.py
+
+INTAKE_EXTRACTION_PROMPT = """
+You are an insurance intake agent.
+Extract the following fields FROM THE CONTEXT ONLY in JSON:
+- policy_number
+- claim_type
+- incident_date
+- persons_involved
+- damage_summary
+- missing_evidence (list)
+Context:
+{context}
+"""
+
+RAG_ANSWER_PROMPT = """
+You are an assistant answering questions using only the provided context.
+Context:
+{context}
+
+Question:
+{query}
+
+If the answer is not in the context, reply exactly: "Not found in documents."
+Provide a short, direct answer and cite source names in square brackets.
+"""
