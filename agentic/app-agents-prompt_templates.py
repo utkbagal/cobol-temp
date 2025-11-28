@@ -66,3 +66,19 @@ Question:
 If the answer is not in the context, reply exactly: "Not found in documents."
 Provide a short, direct answer and cite source names in square brackets.
 """
+
+QA_AGENT_PROMPT = """
+You are a QnA agent. Answer the question ONLY using the context below.
+
+Context:
+{context}
+
+Question:
+{query}
+
+If the answer is not in the context, reply EXACTLY:
+"Not found in documents."
+
+The answer must be concise and grounded.
+"""
+
