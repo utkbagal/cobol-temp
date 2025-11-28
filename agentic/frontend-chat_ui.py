@@ -1,85 +1,86 @@
+# frontend/chat_ui.py
 import streamlit as st
 import requests
+import json
+import os
 
-API_BASE = "http://localhost:8001"
+API_BASE = os.getenv("API_BASE", "http://localhost:8001")
 
 st.set_page_config(page_title="MACIS Chat", layout="wide")
-st.title("MACIS – Claims Assistant")
+st.title("MACIS – Claims Assistant (Chat)")
 
-# -------------------------
-# Session state
-# -------------------------
 if "messages" not in st.session_state:
     st.session_state.messages = []
-if "correlation_id" not in st.session_state:
-    st.session_state.correlation_id = None
 if "uploaded_file" not in st.session_state:
     st.session_state.uploaded_file = None
+if "correlation_id" not in st.session_state:
+    st.session_state.correlation_id = None
 
-# -------------------------
-# Chat display
-# -------------------------
+# Simple "login" stub
+with st.sidebar:
+    st.header("User")
+    username = st.text_input("Enter your name", value="Adjuster")
+    if username:
+        st.session_state.username = username
+
+st.write("You are logged in as:", st.session_state.get("username", "Adjuster"))
+
+# Show existing chat
 for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.write(msg["content"])
+    if msg["role"] == "assistant":
+        st.info(msg["content"])
+    else:
+        st.write(f"**You:** {msg['content']}")
 
-# -------------------------
-# Upload document
-# -------------------------
-uploaded = st.file_uploader("Upload Claim Document:", type=["txt","pdf","docx"])
-
+# Upload panel
+uploaded = st.file_uploader("Upload claim document (PDF/DOCX/TXT)", type=["pdf","docx","txt"])
 if uploaded and st.session_state.uploaded_file is None:
     st.session_state.uploaded_file = uploaded
-
     files = {"file": (uploaded.name, uploaded.getvalue())}
     r = requests.post(f"{API_BASE}/api/ingest", files=files)
-    data = r.json()
+    if r.status_code == 200:
+        data = r.json()
+        st.session_state.correlation_id = data["correlation_id"]
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": f"Document '{uploaded.name}' uploaded. Correlation id: {data['correlation_id']}\nWhat would you like to do next?\n- File a claim\n- Ask questions about the document\n- View extracted information"
+        })
+        st.experimental_rerun()
+    else:
+        st.error("Ingest failed: " + r.text)
 
-    st.session_state.correlation_id = data["correlation_id"]
-
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": f"Document '{uploaded.name}' received. What would you like to do next?\n\n- File a claim\n- Ask questions about the document\n- View extracted information"
-    })
-    st.rerun()
-
-# -------------------------
-# User input (chat)
-# -------------------------
-user_input = st.chat_input("Ask MACIS...")
+# Chat input area
+user_input = st.text_input("Type a message or command (e.g., 'file a claim' or ask a question):")
 
 if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
 
-    # Branching logic
+    # Branch for "file a claim"
     if "file a claim" in user_input.lower():
-        payload = {
-            "filename": st.session_state.uploaded_file.name,
-            "correlation_id": st.session_state.correlation_id
-        }
+        payload = {"filename": st.session_state.uploaded_file.name, "correlation_id": st.session_state.correlation_id}
         r = requests.post(f"{API_BASE}/api/claims/process", json=payload)
-        result = r.json()
+        if r.status_code == 200:
+            result = r.json()
+            summary = result.get("context", {}).get("summary", "No summary available.")
+            st.session_state.messages.append({"role": "assistant", "content": f"Claim processed. Summary:\n{summary}"})
 
-        summary = result["context"].get("summary", "No summary")
-
-        st.session_state.messages.append({
-            "role": "assistant",
-            "content": f"Claim filed.\n\n**Summary:**\n{summary}\n\n**Agent steps:**"
-        })
-
-        # Show agent trace
-        for step in result["steps"]:
-            st.session_state.messages.append({
-                "role": "assistant",
-                "content": f"**{step['agent']} Output:**\n```json\n{step['output']}\n```"
-            })
+            # Attach agent traces
+            for step in result.get("steps", []):
+                formatted = json.dumps(step.get("output"), indent=2)
+                st.session_state.messages.append({"role": "assistant", "content": f"**{step.get('agent')}** output:\n{formatted}"})
+        else:
+            st.session_state.messages.append({"role": "assistant", "content": f"Error processing claim: {r.text}"})
 
     else:
-        # Ask RAG QA
-        data = {"query": user_input}
-        r = requests.post(f"{API_BASE}/api/rag-answer", data=data)
-        ans = r.json()["answer"]
+        # Treat as doc QA via RAG
+        payload = {"query": user_input, "correlation_id": st.session_state.correlation_id, "source": st.session_state.uploaded_file.name}
+        r = requests.post(f"{API_BASE}/api/rag-answer", json=payload)
+        if r.status_code == 200:
+            ans = r.json().get("answer", "")
+            evidence = r.json().get("evidence", [])
+            ev_str = "\n".join([f"- {e['metadata'].get('source','?')} (score:{e['score']:.4f})" for e in evidence])
+            st.session_state.messages.append({"role": "assistant", "content": f"Answer:\n{ans}\n\nEvidence:\n{ev_str}"})
+        else:
+            st.session_state.messages.append({"role": "assistant", "content": f"RAG QA failed: {r.text}"})
 
-        st.session_state.messages.append({"role": "assistant", "content": ans})
-
-    st.rerun()
+    st.experimental_rerun()
