@@ -79,8 +79,8 @@ if user_input:
     "correlation_id": st.session_state.correlation_id
 }
 r = requests.post(f"{API_BASE}/api/claims/qna", json=payload)
-result = r.json()
-answer = result["context"]["qna_result"]["answer"]
+qna = r.json()["context"]["qna_result"]
+answer = qna["final_answer"]
 
 evidence_list = "\n".join([
     f"- {h['metadata']['source']}, score={h['score']:.4f}"
@@ -91,12 +91,14 @@ st.session_state.messages.append({
     "role": "assistant",
     "content": f"{answer}\n\n**Evidence Used:**\n{evidence_list}"
 })
+
 # also show agent trace
 for step in result["steps"]:
     st.session_state.messages.append({
         "role": "assistant",
-        "content": f"**{step['agent']}**:\n```json\n{json.dumps(step['output'], indent=2)}\n```"
+        "content": f"**{step['agent']} Output:**\n```json\n{json.dumps(step['output'], indent=2)}\n```"
     })
+
 
         if r.status_code == 200:
             ans = r.json().get("answer", "")
