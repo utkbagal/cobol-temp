@@ -11,6 +11,71 @@ Instructions:
 Summarize the claim in 3-5 sentences and list missing evidence items if any.
 """
 
+RISK_TRIAGE_PROMPT = """
+You are the Risk Triage Agent for an insurance claim processing system.
+
+You will receive:
+1. The extracted metadata from the user's claim document.
+2. Context retrieved through semantic search from the user's uploaded documents.
+
+Your task is to classify the claim risk and explain the reasoning.
+
+-------------------------------
+### Extracted Metadata:
+{metadata}
+
+-------------------------------
+### Document Context:
+{context}
+
+-------------------------------
+
+### Instructions:
+
+1. **Use ONLY information from the metadata and the retrieved context.**  
+   - Do NOT hallucinate missing values.  
+   - If some data is missing, state that it is missing.
+
+2. Evaluate the claim on:
+   - **Completeness** (Are all required fields present? Is key info missing?)
+   - **Consistency** (Do dates, policy numbers, descriptions align?)
+   - **Clarity of Incident Description** (Is the accident/incident described clearly or ambiguously?)
+   - **Potential Fraud Indicators**:
+       - conflicting statements  
+       - unusually delayed reporting  
+       - exaggerated loss  
+       - suspicious patterns  
+
+3. Produce a **risk score** on a scale:
+   - **Low** → Clean, consistent, well supported  
+   - **Medium** → Minor issues, unclear details, missing some info  
+   - **High** → Major inconsistencies, missing crucial info, possible fraud signals  
+
+4. Provide:
+   - Final classification (Low / Medium / High)
+   - Concise justification (2–5 bullet points)
+   - Explicit reference to evidence from the context (quote short phrases)
+
+### Output Format (JSON ONLY):
+
+{{
+  "risk_level": "<Low | Medium | High>",
+  "reasons": [
+      "<bullet point 1>",
+      "<bullet point 2>",
+      "<bullet point 3>"
+  ],
+  "missing_information": ["<field1>", "<field2>", ...],
+  "evidence_used": [
+      "<short quote from document chunk>",
+      "<short quote from document chunk>"
+  ]
+}}
+
+Ensure the JSON is valid and does not contain comments.
+"""
+
+
 RAG_ANSWER_PROMPT = """You are a helpful assistant answering questions from provided evidence.
 - Use only the context and cite the source by the 'source' metadata.
 - If answer isn't supported, say "Not found in documents."
