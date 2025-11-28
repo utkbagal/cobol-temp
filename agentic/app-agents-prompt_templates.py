@@ -1,84 +1,32 @@
-# app/agents/prompt_templates.py
-SUMMARY_PROMPT = """You are a professional insurance claim summarizer.
-- Use only the provided context.
-- Do not hallucinate.
-- If the requested info is not in the context respond: "Not found in documents."
-- Keep the summary <= 150 words.
-Context:
-{context}
+# app/agents/controller.py
+from app.agents.intake import IntakeAgent
+from app.agents.compliance import ComplianceAgent
+from app.agents.summarization import SummarizationAgent
+from app.agents.risk_triage import RiskTriageAgent
+from app.agents.qna_agent import QnAAgent   # <-- Add this
 
-Instructions:
-Summarize the claim in 3-5 sentences and list missing evidence items if any.
-"""
+class Orchestrator:
+    def __init__(self, correlation_id: str):
+        self.correlation_id = correlation_id
+        self.state = OrchestratorState(correlation_id=correlation_id)
 
-RAG_ANSWER_PROMPT = """You are a helpful assistant answering questions from provided evidence.
-- Use only the context and cite the source by the 'source' metadata.
-- If answer isn't supported, say "Not found in documents."
-Context:
-{context}
+    async def run(self, mode="claim"):
+        """
+        mode = "claim" → intake → compliance → summary → triage
+        mode = "qna"   → only QnAAgent
+        """
 
-Question:
-{query}
-"""
+        if mode == "qna":
+            agents = [QnAAgent()]
+        else:
+            agents = [
+                IntakeAgent(),
+                ComplianceAgent(),
+                SummarizationAgent(),
+                RiskTriageAgent()
+            ]
 
-INTAKE_EXTRACTION_PROMPT = """
-You are an insurance intake agent.
+        for agent in agents:
+            self.state = await agent.run(self.state)
 
-Extract the following fields FROM THE CONTEXT ONLY:
-
-- Policy Number
-- Claim Type
-- Date of Incident
-- Persons Involved
-- Damage Summary
-- Missing Evidence (if possible)
-- Any reference to repair estimates, FIR, hospital bills, etc.
-
-Context:
-{context}
-
-Return in structured JSON format.
-"""
-
-# app/agents/prompt_templates.py
-
-INTAKE_EXTRACTION_PROMPT = """
-You are an insurance intake agent.
-Extract the following fields FROM THE CONTEXT ONLY in JSON:
-- policy_number
-- claim_type
-- incident_date
-- persons_involved
-- damage_summary
-- missing_evidence (list)
-Context:
-{context}
-"""
-
-RAG_ANSWER_PROMPT = """
-You are an assistant answering questions using only the provided context.
-Context:
-{context}
-
-Question:
-{query}
-
-If the answer is not in the context, reply exactly: "Not found in documents."
-Provide a short, direct answer and cite source names in square brackets.
-"""
-
-QA_AGENT_PROMPT = """
-You are a QnA agent. Answer the question ONLY using the context below.
-
-Context:
-{context}
-
-Question:
-{query}
-
-If the answer is not in the context, reply EXACTLY:
-"Not found in documents."
-
-The answer must be concise and grounded.
-"""
-
+        return self.state
