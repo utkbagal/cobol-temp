@@ -9,6 +9,10 @@ from app.rag.chunker import chunk_text
 from app.db.vector_adapter import VectorAdapter
 from app.rag.embeddings import embed_text
 from typing import Dict, Any
+from app.utils.intent import detect_intent
+from app.utils.guardrails import sanitize_user_input
+from app.utils.rate_limiter import allowed as allowed_rate
+from app.utils.observability import track_event
 
 router = APIRouter()
 
@@ -82,3 +86,23 @@ async def qna(payload: dict = Body(...)):
     result = await orch.run(mode="qna")
 
     return result.dict()
+
+@router.post("/intent")
+async def intent_endpoint(payload: dict = Body(...)):
+    message = payload.get("message","")
+    cid = payload.get("correlation_id","none")
+
+    # rate limit
+    if not allowed_rate(cid):
+        return {"ok": False, "reason": "rate_limited"}, 429
+
+    # sanitize
+    sg = sanitize_user_input(message)
+    if not sg["ok"]:
+        track_event("guardrail_reject", cid, {"flags": sg.get("flags"), "reason": sg.get("reason")})
+        return {"ok": False, "reason": sg.get("reason"), "flags": sg.get("flags")}
+
+    # intent detect
+    intent = await detect_intent(sg["sanitized"], cid)
+    track_event("intent_final", cid, {"intent": intent})
+    return {"ok": True, "intent": intent}
