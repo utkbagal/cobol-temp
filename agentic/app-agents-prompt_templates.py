@@ -20,3 +20,22 @@ Context:
 Question:
 {query}
 """
+
+INTAKE_EXTRACTION_PROMPT = """
+You are an insurance intake agent.
+
+Extract the following fields FROM THE CONTEXT ONLY:
+
+- Policy Number
+- Claim Type
+- Date of Incident
+- Persons Involved
+- Damage Summary
+- Missing Evidence (if possible)
+- Any reference to repair estimates, FIR, hospital bills, etc.
+
+Context:
+{context}
+
+Return in structured JSON format.
+"""
