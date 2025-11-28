@@ -1,21 +1,38 @@
+# app/agents/intake.py
 from app.agents.base import BaseAgent
-from app.agents.tools import policy_lookup
+from app.rag.retriever import retrieve_context
+from app.utils.llm_client import chat_with_backoff
+from app.agents.prompt_templates import INTAKE_EXTRACTION_PROMPT
+from app.utils.observability import track_event, Timer
+from app.rag.cleaners import sanitize_for_prompt
 
 class IntakeAgent(BaseAgent):
     name = "IntakeAgent"
 
     async def run(self, state):
-        filename = state.context.get("filename", "unknown")
+        cid = state.correlation_id
+        filename = state.context.get("filename")
 
-        # Placeholder: extract claim ID / policy ID from filename
-        policy_id = "POL123"   # Real extraction later from Stage 4 UI
+        # 1) Retrieve context from RAG
+        with Timer("intake_rag_retrieve", cid):
+            rag_results = retrieve_context(filename, k=4)
 
-        policy_data = await policy_lookup(policy_id)
+        merged_text = "\n\n".join([doc["text"] for doc in rag_results])
+
+        safe_text = sanitize_for_prompt(merged_text)
+
+        prompt = INTAKE_EXTRACTION_PROMPT.format(context=safe_text)
+
+        # 2) LLM-based extraction using real document content
+        with Timer("intake_llm_extract", cid):
+            resp = chat_with_backoff([{"role": "user", "content": prompt}], cid)
+
+        extracted = resp.choices[0].message.content
 
         output = {
-            "detected_policy_id": policy_id,
-            "policy_data": policy_data,
-            "missing_fields": ["claim_description", "incident_date"]  # placeholder
+            "rag_context_used": True,
+            "retrieved_chunks": rag_results,
+            "extracted_metadata": extracted
         }
 
         state.steps.append({"agent": self.name, "output": output})
