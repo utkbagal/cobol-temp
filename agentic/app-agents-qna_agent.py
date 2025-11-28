@@ -1,4 +1,3 @@
-# app/agents/qna_agent.py
 from app.agents.base import BaseAgent
 from app.rag.retriever import retrieve_by_query
 from app.utils.llm_client import chat_with_backoff
