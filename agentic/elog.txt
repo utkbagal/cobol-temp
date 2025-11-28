@@ -1,15 +1,109 @@
-requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/claims/qna (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000019057614A50>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))
-Traceback:
-File "C:\Users\2000110656\capstone_project\macis\frontend\chat_ui.py", line 81, in <module>
-    r = requests.post(f"{API_BASE}/api/claims/qna", json=payload)
-File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\requests\api.py", line 115, in post
-    return request("post", url, data=data, json=json, **kwargs)
-File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\requests\api.py", line 59, in request
-    return session.request(method=method, url=url, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\requests\sessions.py", line 589, in request
-    resp = self.send(prep, **send_kwargs)
-File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\requests\sessions.py", line 703, in send
-    r = adapter.send(request, **kwargs)
-File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\requests\adapters.py", line 677, in send
-    raise ConnectionError(e, request=request)
+INFO:     127.0.0.1:49980 - "POST /api/claims/qna HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__    
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\fastapi\applications.py", line 1134, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__        
+    raise exc
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__        
+    await self.app(scope, receive, _send)
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\starlette\middleware\base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Program Files\Python313\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\starlette\_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\starlette\middleware\base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\2000110656\capstone_project\macis\app\utils\logging_middleware.py", line 9, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\starlette\middleware\base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__     
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app     
+    raise exc
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app     
+    await app(scope, receive, sender)
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__   
+    await self.app(scope, receive, send)
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\fastapi\routing.py", line 125, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app     
+    raise exc
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app     
+    await app(scope, receive, sender)
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\fastapi\routing.py", line 111, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\fastapi\routing.py", line 391, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\fastapi\routing.py", line 290, in run_endpoint_function       
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\2000110656\capstone_project\macis\app\api\core.py", line 114, in qna
+    result = await orch.run(mode="qna")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\2000110656\capstone_project\macis\app\agents\controller.py", line 32, in run
+    self.state = await agent.run(self.state)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\2000110656\capstone_project\macis\app\agents\qna_agent.py", line 15, in run
+    hits = await retrieve_by_semantic(query=query, cid=cid, source=filename, k=5)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\2000110656\capstone_project\macis\app\rag\retriever.py", line 24, in retrieve_by_semantic
+    results = await adapter.query(
+              ^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\2000110656\capstone_project\macis\app\db\vector_adapter.py", line 39, in query
+    results = self.collection.query(
+        query_texts=[query_text],
+        n_results=top_k,
+        where=metadata_filter
+    )
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\chromadb\api\models\Collection.py", line 215, in query        
+    query_request = self._validate_and_prepare_query_request(
+        query_embeddings=query_embeddings,
+    ...<7 lines>...
+        include=include,
+    )
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\chromadb\api\models\CollectionCommon.py", line 103, in wrapper
+    return func(self, *args, **kwargs)
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\chromadb\api\models\CollectionCommon.py", line 329, in _validate_and_prepare_query_request
+    validate_filter_set(filter_set=filters)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\chromadb\api\types.py", line 543, in validate_filter_set      
+    validate_where(filter_set["where"])
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\2000110656\capstone_project\macis\myvenv\Lib\site-packages\chromadb\api\types.py", line 1105, in validate_where
+    raise ValueError(f"Expected where to have exactly one operator, got {where}")
+ValueError: Expected where to have exactly one operator, got {'cid': 'c0e3b23f-c4dc-4b3b-bd97-a428e096d2ba', 'source': 'sample_claim_form.txt'} in query.
